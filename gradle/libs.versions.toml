@@ -1,0 +1,33 @@
+[versions]
+blossom = "1.2.0"
+shadow = "8.1.1"
+spotless = "6.25.0"
+indra = "3.0.1"
+
+# Version declaration for PlaceholderAPI.
+placeholderapi = "2.11.5"
+# Version declaration for MiniPlaceholders.
+miniplaceholders = "2.2.3"
+
+# Version declaration for Configurate.
+configurate = "4.1.2"
+# Version declaration for triumph-cmd.
+command = "2.0.0-SNAPSHOT"
+# Version declaration for scoreboard-library.
+scoreboard = "2.1.6"
+
+[libraries]
+placeholders-legacy = { group = "me.clip", name = "placeholderapi", version.ref = "placeholderapi" }
+placeholders-modern = { group = "io.github.miniplaceholders", name = "miniplaceholders-api", version.ref = "miniplaceholders" }
+
+configurate = { module = "org.spongepowered:configurate-hocon", version.ref = "configurate" }
+command = { module = "dev.triumphteam:triumph-cmd-bukkit", version.ref = "command" }
+scoreboard-api = { module = "net.megavex:scoreboard-library-api", version.ref = "scoreboard" }
+scoreboard-impl = { module = "net.megavex:scoreboard-library-implementation", version.ref = "scoreboard" }
+scoreboard-modern = { module = "net.megavex:scoreboard-library-modern", version.ref = "scoreboard" }
+
+[plugins]
+blossom = { id = "net.kyori.blossom", version.ref = "blossom" }
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+indra = { id = "net.kyori.indra", version.ref = "indra" }
