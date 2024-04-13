@@ -1,0 +1,7 @@
+name: Scoreboard
+main: me.qeklydev.scoreboard.ScoreboardPlugin
+loader: me.qeklydev.scoreboard.ScoreboardLoader
+authors: [ Qekly ]
+
+api-version: "1.19"
+version: ${version}
