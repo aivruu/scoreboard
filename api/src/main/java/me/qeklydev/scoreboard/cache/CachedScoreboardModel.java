@@ -1,5 +1,6 @@
 package me.qeklydev.scoreboard.cache;
 
+import java.util.List;
 import java.util.UUID;
 import me.qeklydev.scoreboard.type.ScoreboardToggleStateType;
 import net.kyori.adventure.text.Component;
@@ -15,9 +16,15 @@ import org.jetbrains.annotations.NotNull;
  * @param id the player uuid as a string.
  * @param sidebar the {@link Sidebar} model that represents
  *                the player scoreboard.
+ * @param toggleState the current {@link ScoreboardToggleStateType}
+ *                    for this scoreboard.
+ * @param definedTitleForThisScoreboard the pre-defined title that will
+ *                                      use this scoreboard.
  * @since 0.0.1
  */
-public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar sidebar, @NotNull ScoreboardToggleStateType toggleState) {
+public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar sidebar, @NotNull ScoreboardToggleStateType toggleState,
+                                    @NotNull List<@NotNull Component> definedTitleForThisScoreboard,
+                                    @NotNull List<@NotNull Component> definedContentForThisScoreboard) {
   /**
    * Returns the {@link Player} based on the uuid
    * for this scoreboard model. Will throw an {@link IllegalArgumentException}
@@ -62,6 +69,9 @@ public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar sidebar
    * given title.
    *
    * @param newTitle the title component to set.
+   * @return The boolean state for this operation,
+   *     {@code true} if title was changed or reseted.
+   *     Otherwise {@code false} if toggle-state is {@link ScoreboardToggleStateType#CLOSED}.
    * @since 0.0.1
    */
   public boolean changeTitle(final @NotNull Component newTitle) {
@@ -71,6 +81,10 @@ public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar sidebar
      */
     if (this.toggleState == ScoreboardToggleStateType.CLOSED) {
       return false;
+    }
+    if (newTitle.equals(Component.empty())) {
+      this.sidebar.title(this.definedTitleForThisScoreboard.get(0));
+      return true;
     }
     this.sidebar.title(newTitle);
     return true;
