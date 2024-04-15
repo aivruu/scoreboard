@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @since 0.0.1
  */
-public final class ScoreboardEventModel extends Event {
+public abstract class ScoreboardEventModel extends Event {
   private static final HandlerList HANDLER_LIST = new HandlerList();
   private final Player player;
   private final CachedScoreboardModel scoreboardModel;
