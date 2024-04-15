@@ -65,20 +65,25 @@ public final class ScoreboardModelRepository {
    * Removes the scoreboard model for this player based
    * on the uuid provided.
    *
-   * @param player the player.
+   * @param scoreboardModel the {@link CachedScoreboardModel}
+   *                        to delete.
    * @return The boolean state for this operation, {@code true}
    *     if the scoreboard model exists, and sidebar was removed
    *     correctly. Otherwise {@code false}.
    * @see CachedScoreboardModel#remove()
    * @since 0.0.1
    */
-  public boolean unregister(final @NotNull Player player) {
-    final var scoreboardModel = this.scoreboards.remove(player.getUniqueId().toString());
+  public boolean unregister(final @NotNull CachedScoreboardModel scoreboardModel) {
+    /*
+     * We skip the non-null check for this model
+     * due that already was effected before.
+     */
+    this.scoreboards.remove(scoreboardModel.id());
     /*
      * Check if this player have a scoreboard
      * assigned, and then remove it.
      */
-    return (scoreboardModel != null) && scoreboardModel.remove();
+    return scoreboardModel.remove();
   }
 
   /**
