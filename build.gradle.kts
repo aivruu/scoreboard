@@ -28,7 +28,7 @@ subprojects {
 
     spotless {
         java {
-            licenseHeaderFile("$rootDir/header.txt")
+            licenseHeaderFile("$rootDir/license/header.txt")
             removeUnusedImports()
             trimTrailingWhitespace()
             indentWithSpaces(2)
