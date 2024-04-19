@@ -2,13 +2,20 @@ package me.qeklydev.scoreboard.thread.result;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * This class is used to proportionate multiple status codes
+ * based on the operations result.
+ *
+ * @param status the status code.
+ * @since 0.0.1
+ */
 public record ExecutorThreadShutdownResult(byte status) {
   /**
    * The executor was already shutdown early.
    *
    * @since 0.0.1
    */
-  public static final byte ALREADY_SHUTDOWN= 0;
+  public static final byte ALREADY_SHUTDOWN = 0;
   /**
    * The executor was shutdown with an await-termination
    * for pending non-processed tasks.
@@ -120,7 +127,7 @@ public record ExecutorThreadShutdownResult(byte status) {
    *     {@link ExecutorThreadShutdownResult#ERROR_STATUS}.
    * @since 0.0.1
    */
-  public boolean error() {
+  public boolean failed() {
     return this.status == ERROR_STATUS;
   }
 
@@ -130,6 +137,8 @@ public record ExecutorThreadShutdownResult(byte status) {
       case ALREADY_SHUTDOWN -> "0 (Thread Already Shutdown)";
       case SHUTDOWN_WITH_TERMINATION -> "1 (Thread Normal Shutdown)";
       case SHUTDOWN_IMMEDIATE -> "2 (Thread Shutdown Immediate)";
+      case ERROR_STATUS -> "3 (Thread Shutdown Error)";
+      default -> throw new IllegalStateException(this.status + " (Unexpected value)");
     };
   }
 }
