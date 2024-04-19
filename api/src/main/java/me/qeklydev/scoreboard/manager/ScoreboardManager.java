@@ -29,7 +29,9 @@ import org.jetbrains.annotations.Nullable;
  * @since 0.0.1
  */
 public final class ScoreboardManager {
-  private static final byte TOGGLE_POSSIBLE_RESULT_CODE = 0;
+  private static final byte FIRST_POSSIBLE_TOGGLE_RESULT = 0;
+  private static final byte TOGGLE_ENABLE_RESULT = 1;
+  private static final byte TOGGLE_DISABLE_RESULT = 2;
   private final ComponentLogger logger;
   private final ScoreboardModelRepository repository;
   private final ConfigurationProvider<Configuration> configProvider;
@@ -244,7 +246,9 @@ public final class ScoreboardManager {
    *     the scoreboard-model is not available or event is cancelled,
    *     {@code 1} if new toggle-status is 'CLOSED', otherwise {@code 2}.
    * @since 0.0.1
-   * @see ScoreboardManager#TOGGLE_POSSIBLE_RESULT_CODE
+   * @see ScoreboardManager#FIRST_POSSIBLE_TOGGLE_RESULT
+   * @see ScoreboardManager#TOGGLE_ENABLE_RESULT
+   * @see ScoreboardManager#TOGGLE_DISABLE_RESULT
    */
   public byte toggle(final @NotNull Player player) {
     final var scoreboardModel = this.repository.findOrNull(player.getUniqueId().toString());
@@ -253,12 +257,12 @@ public final class ScoreboardManager {
      * before toggle-state change.
      */
     if (scoreboardModel == null) {
-      return TOGGLE_POSSIBLE_RESULT_CODE;
+      return FIRST_POSSIBLE_TOGGLE_RESULT;
     }
     final var scoreboardToggleEvent = new ScoreboardToggleEvent(player, scoreboardModel, scoreboardModel.toggleState());
     Bukkit.getPluginManager().callEvent(scoreboardToggleEvent);
     if (scoreboardToggleEvent.isCancelled()) {
-      return TOGGLE_POSSIBLE_RESULT_CODE;
+      return FIRST_POSSIBLE_TOGGLE_RESULT;
     }
     /*
      * Toggle visibility and state for the scoreboard,
@@ -268,7 +272,8 @@ public final class ScoreboardManager {
      */
     final var newToggleStateProvided = scoreboardModel.toggleVisibility();
     this.repository.update(scoreboardModel.id(), newToggleStateProvided);
-    return (newToggleStateProvided == ScoreboardToggleStateType.CLOSED) ? (byte) 1 : 2;
+    return (newToggleStateProvided == ScoreboardToggleStateType.CLOSED)
+        ? TOGGLE_DISABLE_RESULT : TOGGLE_ENABLE_RESULT;
   }
 
   /**
