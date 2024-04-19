@@ -38,7 +38,8 @@ public final class Configuration implements ConfigurationInterface {
   public String scoreboardMode = "SINGLE";
 
   @Comment("""
-        THIS IS FOR 'SINGLE' SCOREBOARD MODE.
+        This option is global, will be applied for
+        any scoreboard mode.
         
         The content that will be showed as title if the
         'animated-title' option is enabled, otherwise will
@@ -56,8 +57,8 @@ public final class Configuration implements ConfigurationInterface {
       "");
 
   @Comment("""
-      Configure the worlds that you want that have an scoreboard
-      pre-defined, this only works if mode is 'WORLD'.""")
+      Configure the worlds that you want to have an scoreboard
+      pre-defined.""")
   public ScoreboardSection[] scoreboardForWorlds = { new ScoreboardSection() };
 
   @ConfigSerializable
@@ -66,14 +67,6 @@ public final class Configuration implements ConfigurationInterface {
         The name of the world that will use the scoreboard,
         also, actuate like an identifier for this section.""")
     public String targetedWorld = "world";
-
-    @Comment("""
-        The content that will be showed as title if the
-        'animated-title' option is enabled, otherwise will
-        take only the first element to show""")
-    public List<String> titleContent = List.of(
-        "<gradient:green:gray>Scoreboard | World: <world>",
-        "<gradient:green:aqua>Scoreboard | Online: <papi:server_online>");
 
     @Comment("This content will be used for the scoreboard lines.")
     public List<String> content = List.of(
