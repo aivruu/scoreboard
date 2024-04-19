@@ -62,6 +62,7 @@ public final class ScoreboardUpdaterThreadModelImpl extends CustomExecutorThread
    */
   private void processOnSingleMode(final @NotNull Configuration config) {
     final var componentsLines = ComponentUtils.ofMany(config.content);
+    final var size = componentsLines.size();
     for (final var scoreboardModel : super.scoreboardRepository.scoreboards()) {
       /*
        * If visibility status for the scoreboard is 'CLOSED',
@@ -70,7 +71,14 @@ public final class ScoreboardUpdaterThreadModelImpl extends CustomExecutorThread
       if (scoreboardModel.toggleState() == ScoreboardToggleStateType.CLOSED) {
         continue;
       }
-      var lineIndex = 0;
+      byte lineIndex = 0;
+      /*
+       * We reset the line index value to zero if current index
+       * has reached the list size.
+       */
+      if (lineIndex == size) {
+        lineIndex = 0;
+      }
       for (final var line : componentsLines) {
         /*
          * Establish the current content list index as the current line for
@@ -122,7 +130,14 @@ public final class ScoreboardUpdaterThreadModelImpl extends CustomExecutorThread
       if (scoreboardModel.toggleState() == ScoreboardToggleStateType.CLOSED) {
         continue;
       }
-      var lineIndex = 0;
+      byte lineIndex = 0;
+      /*
+       * We reset the line index value to zero if current index
+       * has reached the list size.
+       */
+      if (lineIndex == content.size()) {
+        lineIndex = 0;
+      }
       for (final var line : content) {
         /*
          * Establish the current content list index as the current line for
