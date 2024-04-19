@@ -6,7 +6,6 @@ import java.util.Map;
 import me.qeklydev.scoreboard.cache.CachedScoreboardModel;
 import me.qeklydev.scoreboard.type.ScoreboardToggleStateType;
 import net.megavex.scoreboardlibrary.api.sidebar.Sidebar;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,6 +58,20 @@ public final class ScoreboardModelRepository {
   public void register(final @NotNull String id, final @NotNull Sidebar sidebar) {
     final var scoreboardModel = new CachedScoreboardModel(id, sidebar, ScoreboardToggleStateType.VISIBLE);
     this.scoreboards.put(id, scoreboardModel);
+  }
+
+  /**
+   * Updates the current toggle-state for the cached scoreboard model
+   * based on the provided identifier, only if model is present in cache.
+   *
+   * @param id the player id.
+   * @param newToggleState the new {@link ScoreboardToggleStateType} for
+   *                       update the old one.
+   * @since 0.0.1
+   */
+  public void update(final @NotNull String id, final @NotNull ScoreboardToggleStateType newToggleState) {
+    this.scoreboards.computeIfPresent(id, (uid, scoreboardModel) ->
+        new CachedScoreboardModel(id, scoreboardModel.internal(), newToggleState));
   }
 
   /**
