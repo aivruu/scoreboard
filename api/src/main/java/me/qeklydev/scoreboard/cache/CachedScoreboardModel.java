@@ -1,6 +1,5 @@
 package me.qeklydev.scoreboard.cache;
 
-import java.util.List;
 import java.util.UUID;
 import me.qeklydev.scoreboard.type.ScoreboardToggleStateType;
 import net.kyori.adventure.text.Component;
@@ -14,17 +13,13 @@ import org.jetbrains.annotations.NotNull;
  * scoreboard of each connected player.
  * 
  * @param id the player uuid as a string.
- * @param sidebar the {@link Sidebar} model that represents
- *                the player scoreboard.
+ * @param internal the {@link Sidebar} model that represents
+ *                 the scoreboard, and is used for their handling.
  * @param toggleState the current {@link ScoreboardToggleStateType}
  *                    for this scoreboard.
- * @param definedTitleForThisScoreboard the pre-defined title that will
- *                                      use this scoreboard.
  * @since 0.0.1
  */
-public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar sidebar, @NotNull ScoreboardToggleStateType toggleState,
-                                    @NotNull List<@NotNull Component> definedTitleForThisScoreboard,
-                                    @NotNull List<@NotNull Component> definedContentForThisScoreboard) {
+public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar internal, @NotNull ScoreboardToggleStateType toggleState) {
   /**
    * Returns the {@link Player} based on the uuid
    * for this scoreboard model. Will throw an {@link IllegalArgumentException}
@@ -56,11 +51,15 @@ public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar sidebar
    * @since 0.0.1
    */
   public boolean remove() {
-    if (this.sidebar.closed()) {
+    /*
+     * Check if the scoreboard already was closed
+     * for the player.
+     */
+    if (this.internal.closed()) {
       return false;
     }
-    this.sidebar.removePlayer(this.ofUid());
-    this.sidebar.close();
+    this.internal.removePlayer(this.ofUid());
+    this.internal.close();
     return true;
   }
 
@@ -70,8 +69,8 @@ public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar sidebar
    *
    * @param newTitle the title component to set.
    * @return The boolean state for this operation,
-   *     {@code true} if title was changed or reseted.
-   *     Otherwise {@code false} if toggle-state is {@link ScoreboardToggleStateType#CLOSED}.
+   *     {@code true} if title was changed. Otherwise {@code false}
+   *     if toggle-state is {@link ScoreboardToggleStateType#CLOSED}.
    * @since 0.0.1
    */
   public boolean changeTitle(final @NotNull Component newTitle) {
@@ -82,30 +81,55 @@ public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar sidebar
     if (this.toggleState == ScoreboardToggleStateType.CLOSED) {
       return false;
     }
-    if (newTitle.equals(Component.empty())) {
-      this.sidebar.title(this.definedTitleForThisScoreboard.get(0));
-      return true;
-    }
-    this.sidebar.title(newTitle);
+    this.internal.title(newTitle);
     return true;
+  }
+
+  /**
+   * Updates the content for the specified line with the
+   * given component.
+   *
+   * @param index the line number.
+   * @param lineComponent the component for that line.
+   * @since 0.0.1
+   */
+  public void updateLine(final int index, final @NotNull Component lineComponent) {
+    this.internal.line(index, lineComponent);
+  }
+
+  /**
+   * Updates the current title for the scoreboard by the
+   * given component.
+   * Don't confuse with {@link CachedScoreboardModel#changeTitle(Component)},
+   * {@code updateTitle()} method is used during title-animation.
+   *
+   * @param titleComponent the new title component.
+   * @since 0.0.1
+   */
+  public void updateTitle(final @NotNull Component titleComponent) {
+    this.internal.title(titleComponent);
   }
 
   /**
    * Toggles the visibility of the scoreboard for
    * the current player.
    *
-   * @return The boolean state for this operation,
-   *     {@code false} if the scoreboard was closed
-   *     for visibility. Otherwise {@code true}.
+   * @return The new {@link ScoreboardToggleStateType}
+   *     for this operation.
    * @since 0.0.1
    */
-  public boolean toggleVisibility() {
+  public @NotNull ScoreboardToggleStateType toggleVisibility() {
     final var player = this.ofUid();
+    /*
+     * If the previous toggle-state for the scoreboard
+     * was 'CLOSED', then we show again the scoreboard
+     * to the player.
+     */
     if (this.toggleState == ScoreboardToggleStateType.CLOSED) {
-      this.sidebar.addPlayer(player);
-      return true;
+      this.internal.addPlayer(player);
+      return ScoreboardToggleStateType.VISIBLE;
     }
-    this.sidebar.removePlayer(player);
-    return false;
+    this.internal.removePlayer(player);
+    return ScoreboardToggleStateType.CLOSED;
   }
 }
