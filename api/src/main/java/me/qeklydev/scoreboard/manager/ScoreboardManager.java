@@ -1,16 +1,15 @@
 package me.qeklydev.scoreboard.manager;
 
 import java.util.List;
-
 import me.qeklydev.scoreboard.cache.CachedScoreboardModel;
 import me.qeklydev.scoreboard.config.Configuration;
 import me.qeklydev.scoreboard.config.ConfigurationProvider;
 import me.qeklydev.scoreboard.event.ScoreboardCloseEvent;
 import me.qeklydev.scoreboard.event.ScoreboardCreateEvent;
+import me.qeklydev.scoreboard.event.ScoreboardToggleEvent;
 import me.qeklydev.scoreboard.repository.ScoreboardModelRepository;
 import me.qeklydev.scoreboard.thread.CustomExecutorThreadModel;
 import me.qeklydev.scoreboard.type.ScoreboardToggleStateType;
-import me.qeklydev.scoreboard.utils.ComponentUtils;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.megavex.scoreboardlibrary.api.ScoreboardLibrary;
 import net.megavex.scoreboardlibrary.api.exception.NoPacketAdapterAvailableException;
@@ -29,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 0.0.1
  */
 public final class ScoreboardManager {
+  private static final byte TOGGLE_POSSIBLE_RESULT_CODE = 0;
   private final ComponentLogger logger;
   private final ScoreboardModelRepository repository;
   private final ConfigurationProvider<Configuration> configProvider;
@@ -43,20 +43,35 @@ public final class ScoreboardManager {
   }
 
   /**
-   * Boots up the scoreboard main component.
+   * Boots up the scoreboard library component and perform
+   * defined scoreboard-mode check for validation.
    *
    * @param plugin a {@link JavaPlugin} instance.
+   * @return The boolean state for this operation, {@code true}
+   *     if library component was loaded correctly, and
+   *     scoreboard-mode validation was correct. Otherwise {@code false}.
    * @since 0.0.1
    */
   public boolean load(final @NotNull JavaPlugin plugin) {
     try {
       this.scoreboardLibrary = ScoreboardLibrary.loadScoreboardLibrary(plugin);
       this.logger.info("Loaded scoreboard library correctly.");
-      return true;
     } catch (final NoPacketAdapterAvailableException exception) {
       this.logger.error("No packet adapter was founded for the scoreboard library", exception);
       return false;
     }
+    this.logger.info("Checking for valid scoreboard-mode.");
+    final var scoreboardMode = this.configProvider.get().scoreboardMode;
+    return switch (scoreboardMode) {
+      case "SINGLE", "WORLD" -> {
+        this.logger.info("Detected '{}' scoreboard mode as valid.", scoreboardMode);
+        yield true;
+      }
+      default -> {
+        this.logger.error("-> '{}' is not valid as a scoreboard-mode in the configuration.", scoreboardMode);
+        yield false;
+      }
+    };
   }
 
   /**
@@ -102,8 +117,7 @@ public final class ScoreboardManager {
    */
   public void shutdown() {
     if (this.scoreboardLibrary == null) {
-      this.logger.info("Scoreboard components already off, skipping shutting down for them.");
-      return;
+      this.logger.info("Scoreboard library already off, skipping shutting down for it.");
     }
     this.logger.info("Shutting down scoreboard components.");
     /*
@@ -134,7 +148,7 @@ public final class ScoreboardManager {
         continue;
       }
       final var executorShutdownResult = executorThreadModel.shutdown();
-      if (executorShutdownResult.error()) {
+      if (executorShutdownResult.failed()) {
         this.logger.warn("Incorrectly shutdown on current CustomExecutorThreadModel.");
       }
       this.logger.info("Shutdown result for 'ScoreboardUpdatingExecutor' thread is: {}", executorShutdownResult);
@@ -149,6 +163,10 @@ public final class ScoreboardManager {
    */
   public void create(final @NotNull Player player) {
     final var scoreboardModel = this.createNeededModelForPlayer(player);
+    /*
+     * Checks if the provided scoreboard model is nullable,
+     * or not.
+     */
     if (scoreboardModel == null) {
       return;
     }
@@ -157,46 +175,88 @@ public final class ScoreboardManager {
     if (scoreboardCreateEvent.isCancelled()) {
       return;
     }
-    final var scoreboardModelSidebar = scoreboardModel.sidebar();
+    final var scoreboardModelSidebar = scoreboardModel.internal();
     // Assign the player for this sidebar object.
     scoreboardModelSidebar.addPlayer(player);
     // Store player ID and sidebar object into the scoreboard repository.
     this.repository.register(player.getUniqueId().toString(), scoreboardModelSidebar);
   }
 
-//  private @Nullable CachedScoreboardModel createNeededModelForPlayer(final @NotNull Player player) {
-//    final var config = this.configProvider.get();
-//    final var playerUid = player.getUniqueId().toString();
-//    final var newSidebarObject = this.scoreboardLibrary.createSidebar();
-//    return switch (config.scoreboardMode) {
-//      case "WORLD" -> {
-//        for (final var worldSection : config.scoreboardForWorlds) {
-//          final var worldName = worldSection.targetedWorld;
-//          /*
-//           * Checks if the world specified exists and is loaded
-//           * on the server, or if the player world name is equals
-//           * than the currently iterated.
-//           */
-//          if ((Bukkit.getWorld(worldName) == null) || !player.getWorld().getName().equals(worldName)) {
-//            continue;
-//          }
-//          yield new CachedScoreboardModel(
-//              playerUid,
-//              newSidebarObject,
-//              ScoreboardToggleStateType.VISIBLE,
-//              ComponentUtils.ofMany(worldSection.titleContent),
-//              ComponentUtils.ofMany(worldSection.content));
-//        }
-//      }
-//      case "SINGLE" -> new CachedScoreboardModel(
-//          playerUid,
-//          newSidebarObject,
-//          ScoreboardToggleStateType.VISIBLE,
-//          ComponentUtils.ofMany(config.titleContent),
-//          ComponentUtils.ofMany(config.content));
-//      default -> null;
-//    };
-//  }
+  /**
+   * Creates a new cached scoreboard model based on the
+   * information provided by the configuration.
+   *
+   * @param player the player for this scoreboard.
+   * @return The {@link CachedScoreboardModel} or {@code null}
+   *     if mode or world specified isn't valid.
+   * @since 0.0.1
+   */
+  private @Nullable CachedScoreboardModel createNeededModelForPlayer(final @NotNull Player player) {
+    final var config = this.configProvider.get();
+    final var playerUid = player.getUniqueId().toString();
+    final var newSidebarObject = this.scoreboardLibrary.createSidebar();
+    return switch (config.scoreboardMode) {
+      case "WORLD" -> {
+        CachedScoreboardModel scoreboardModel = null;
+        for (final var section : config.scoreboardForWorlds) {
+          final var worldName = section.targetedWorld;
+          /*
+           * Checks if the world specified exists and is loaded
+           * on the server, or if the player world name is equals
+           * than the currently iterated.
+           */
+          if ((Bukkit.getWorld(worldName) == null) || !player.getWorld().getName().equals(worldName)) {
+            continue;
+          }
+          scoreboardModel = new CachedScoreboardModel(
+              playerUid, newSidebarObject,
+              ScoreboardToggleStateType.VISIBLE);
+          break;
+        }
+        yield scoreboardModel;
+      }
+      case "SINGLE" -> new CachedScoreboardModel(
+          playerUid, newSidebarObject,
+          ScoreboardToggleStateType.VISIBLE);
+      default -> null;
+    };
+  }
+
+  /**
+   * Toggles the state of the scoreboard for the specified
+   * player.
+   *
+   * @param player the specified player.
+   * @return The status code for this operation. {@code 0} if
+   *     the scoreboard-model is not available or event is cancelled,
+   *     {@code 1} if new toggle-status is 'CLOSED', otherwise {@code 2}.
+   * @since 0.0.1
+   * @see ScoreboardManager#TOGGLE_POSSIBLE_RESULT_CODE
+   */
+  public byte toggle(final @NotNull Player player) {
+    final var scoreboardModel = this.repository.findOrNull(player.getUniqueId().toString());
+    /*
+     * Check if the player have a scoreboard assigned
+     * before toggle-state change.
+     */
+    if (scoreboardModel == null) {
+      return TOGGLE_POSSIBLE_RESULT_CODE;
+    }
+    final var scoreboardToggleEvent = new ScoreboardToggleEvent(player, scoreboardModel, scoreboardModel.toggleState());
+    Bukkit.getPluginManager().callEvent(scoreboardToggleEvent);
+    if (scoreboardToggleEvent.isCancelled()) {
+      return TOGGLE_POSSIBLE_RESULT_CODE;
+    }
+    /*
+     * Toggle visibility and state for the scoreboard,
+     * and use the provided toggle-state for update model
+     * ín repository cache, and provide a status code depending
+     * on new toggle-state type.
+     */
+    final var newToggleStateProvided = scoreboardModel.toggleVisibility();
+    this.repository.update(scoreboardModel.id(), newToggleStateProvided);
+    return (newToggleStateProvided == ScoreboardToggleStateType.CLOSED) ? (byte) 1 : 2;
+  }
 
   /**
    * Deletes the scoreboard assigned for this player.
