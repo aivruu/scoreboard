@@ -2,6 +2,7 @@ package me.qeklydev.scoreboard.manager;
 
 import java.util.List;
 import me.qeklydev.scoreboard.cache.CachedScoreboardModel;
+import me.qeklydev.scoreboard.component.ComponentUtils;
 import me.qeklydev.scoreboard.config.Configuration;
 import me.qeklydev.scoreboard.config.ConfigurationProvider;
 import me.qeklydev.scoreboard.event.ScoreboardCloseEvent;
@@ -172,12 +173,24 @@ public final class ScoreboardManager {
     }
     final var scoreboardCreateEvent = new ScoreboardCreateEvent(player, scoreboardModel);
     Bukkit.getPluginManager().callEvent(scoreboardCreateEvent);
+    /*
+     * Avoid totally scoreboard creation for the player
+     * if the event was cancelled.
+     */
     if (scoreboardCreateEvent.isCancelled()) {
       return;
     }
+    final var config = this.configProvider.get();
     final var scoreboardModelSidebar = scoreboardModel.internal();
     // Assign the player for this sidebar object.
     scoreboardModelSidebar.addPlayer(player);
+    /*
+     * Check if the scoreboard-mode defined is 'SINGLE',
+     * so we need to set the title manually.
+     */
+    if (config.scoreboardMode.equals("SINGLE")) {
+      scoreboardModelSidebar.title(ComponentUtils.ofSingle(config.titleContent.get(0)));
+    }
     // Store player ID and sidebar object into the scoreboard repository.
     this.repository.register(player.getUniqueId().toString(), scoreboardModelSidebar);
   }
