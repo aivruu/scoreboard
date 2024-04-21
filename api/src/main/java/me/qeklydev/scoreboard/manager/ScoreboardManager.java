@@ -105,8 +105,8 @@ public final class ScoreboardManager {
        * If the period-rate for the executor is not defined
        * yet, skip it.
        */
-      if (executorThreadModel.periodRate() == 0) {
-        continue;
+      if (executorThreadModel.periodRate() <= 0) {
+        executorThreadModel.periodRate(20);
       }
       executorThreadModel.schedule();
     }
@@ -184,7 +184,6 @@ public final class ScoreboardManager {
     }
     final var config = this.configProvider.get();
     final var scoreboardModelSidebar = scoreboardModel.internal();
-    // Assign the player for this sidebar object.
     scoreboardModelSidebar.addPlayer(player);
     /*
      * Check if the scoreboard-mode defined is 'SINGLE',
@@ -193,7 +192,6 @@ public final class ScoreboardManager {
     if (config.scoreboardMode.equals("SINGLE")) {
       scoreboardModelSidebar.title(ComponentUtils.ofSingle(config.titleContent.get(0)));
     }
-    // Store player ID and sidebar object into the scoreboard repository.
     this.repository.register(player.getUniqueId().toString(), scoreboardModelSidebar);
   }
 
@@ -259,6 +257,10 @@ public final class ScoreboardManager {
     if (scoreboardModel == null) {
       return FIRST_POSSIBLE_TOGGLE_RESULT;
     }
+    /*
+     * Fires the scoreboard toggle event and return
+     * the final status code for this operation.
+     */
     final var scoreboardToggleEvent = new ScoreboardToggleEvent(player, scoreboardModel, scoreboardModel.toggleState());
     Bukkit.getPluginManager().callEvent(scoreboardToggleEvent);
     if (scoreboardToggleEvent.isCancelled()) {
