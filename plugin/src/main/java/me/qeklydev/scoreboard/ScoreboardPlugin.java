@@ -15,8 +15,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
-  private static final byte RELOAD_ERROR_STATUS = 0;
-  private static final byte RELOAD_SUCCESS_STATUS = 1;
+  public static final byte RELOAD_ERROR_STATUS = 0;
+  public static final byte RELOAD_SUCCESS_STATUS = 1;
   private ComponentLogger logger;
   private ConfigurationProvider<Configuration> configProvider;
   private ConfigurationProvider<Messages> messagesProvider;
