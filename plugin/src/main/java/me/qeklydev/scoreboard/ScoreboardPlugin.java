@@ -15,6 +15,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
+  private static final byte RELOAD_ERROR_STATUS = 0;
+  private static final byte RELOAD_SUCCESS_STATUS = 1;
   private ComponentLogger logger;
   private ConfigurationProvider<Configuration> configProvider;
   private ConfigurationProvider<Messages> messagesProvider;
@@ -87,6 +89,46 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
     this.titleUpdaterThreadModel.periodRate(config.scoreboardTitleUpdateRate);
     this.scoreboardManager.scheduleWithProvidedExecutors(List.of(
         this.scoreboardUpdaterThreadModel, this.titleUpdaterThreadModel));
+  }
+
+  /**
+   * Uses the reloaded configuration model to update the
+   * period-rate for executor thread models, and title-animation
+   * content.
+   *
+   * @return A status code for this operation, {@code 0} if
+   *     scoreboard-mode isn't valid, or update-rate values
+   *     are zero or negative, {@code 1} if the executors
+   *     period-rate and title-animation content were updated.
+   * @since 0.0.1
+   * @see ScoreboardPlugin#RELOAD_ERROR_STATUS
+   * @see ScoreboardPlugin#RELOAD_SUCCESS_STATUS
+   */
+  public byte reload() {
+    final var config = this.configProvider.get();
+    /*
+     * Check if new provided values for update-rate for
+     * scoreboard lines, and title-animation is zero, or
+     * negative.
+     */
+    if (config.scoreboardTitleUpdateRate <= 0 || config.scoreboardFrameUpdateRate <= 0) {
+      return RELOAD_ERROR_STATUS;
+    }
+    /*
+     * Check the scoreboard-mode, for cases where the case
+     * are 'SINGLE' OR 'WORLD', we update the update-rate
+     * values for the threads and, update the title content.
+     */
+    return switch (config.scoreboardMode) {
+      case "SINGLE", "WORLD" -> {
+        this.scoreboardUpdaterThreadModel.periodRate(config.scoreboardFrameUpdateRate);
+        this.titleUpdaterThreadModel.periodRate(config.scoreboardTitleUpdateRate);
+        this.titleUpdaterThreadModel.content(ComponentUtils.ofMany(config.titleContent));
+        yield RELOAD_SUCCESS_STATUS;
+      }
+      /* Scoreboard-mode defined isn't valid. */
+      default -> RELOAD_ERROR_STATUS;
+    };
   }
 
   @Override
