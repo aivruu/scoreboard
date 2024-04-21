@@ -54,8 +54,8 @@ public abstract class CustomExecutorThreadModel implements Runnable {
    * @param newPeriodRate the new period-rate.
    * @since 0.0.1
    */
-  public void periodRate(final byte newPeriodRate) {
-    this.periodRate = newPeriodRate;
+  public void periodRate(final int newPeriodRate) {
+    this.periodRate = (byte) newPeriodRate;
   }
 
   /**
