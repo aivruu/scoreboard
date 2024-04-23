@@ -1,3 +1,20 @@
+/*
+ * This file is part of scoreboard - https://github.com/aivruu/scoreboard
+ * Copyright (C) 2020-2024 aivruu (https://github.com/aivruu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package me.qeklydev.scoreboard.repository;
 
 import java.util.Collection;
@@ -6,6 +23,7 @@ import java.util.Map;
 import me.qeklydev.scoreboard.cache.CachedScoreboardModel;
 import me.qeklydev.scoreboard.type.ScoreboardToggleStateType;
 import net.megavex.scoreboardlibrary.api.sidebar.Sidebar;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,28 +68,29 @@ public final class ScoreboardModelRepository {
    * Stores the player id and their Sidebar controller provided,
    * and store it in the repository cache.
    *
-   * @param id the player id.
+   * @param player the player.
    * @param sidebar the {@link CachedScoreboardModel} controller for this
    *                scoreboard.
    * @since 0.0.1
    */
-  public void register(final @NotNull String id, final @NotNull Sidebar sidebar) {
-    final var scoreboardModel = new CachedScoreboardModel(id, sidebar, ScoreboardToggleStateType.VISIBLE);
-    this.scoreboards.put(id, scoreboardModel);
+  public void register(final @NotNull Player player, final @NotNull Sidebar sidebar) {
+    final var scoreboardModel = new CachedScoreboardModel(player, sidebar, ScoreboardToggleStateType.VISIBLE);
+    this.scoreboards.put(player.getUniqueId().toString(), scoreboardModel);
   }
 
   /**
    * Updates the current toggle-state for the cached scoreboard model
    * based on the provided identifier, only if model is present in cache.
    *
-   * @param id the player id.
+   * @param player the player.
    * @param newToggleState the new {@link ScoreboardToggleStateType} for
    *                       update the old one.
    * @since 0.0.1
    */
-  public void update(final @NotNull String id, final @NotNull ScoreboardToggleStateType newToggleState) {
-    this.scoreboards.computeIfPresent(id, (uid, scoreboardModel) ->
-        new CachedScoreboardModel(id, scoreboardModel.internal(), newToggleState));
+  public void update(final @NotNull Player player, final @NotNull ScoreboardToggleStateType newToggleState) {
+    final var playerId = player.getUniqueId().toString();
+    this.scoreboards.computeIfPresent(playerId, (id, scoreboardModel) ->
+        new CachedScoreboardModel(player, scoreboardModel.internal(), newToggleState));
   }
 
   /**
@@ -87,11 +106,12 @@ public final class ScoreboardModelRepository {
    * @since 0.0.1
    */
   public boolean unregister(final @NotNull CachedScoreboardModel scoreboardModel) {
+    final var playerId = scoreboardModel.player().getUniqueId().toString();
     /*
      * We skip the non-null check for this model
      * due that already was effected before.
      */
-    this.scoreboards.remove(scoreboardModel.id());
+    this.scoreboards.remove(playerId);
     /*
      * Check if this player have a scoreboard
      * assigned, and then remove it.
