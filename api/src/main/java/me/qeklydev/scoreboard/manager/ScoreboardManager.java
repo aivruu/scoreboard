@@ -1,3 +1,20 @@
+/*
+ * This file is part of scoreboard - https://github.com/aivruu/scoreboard
+ * Copyright (C) 2020-2024 aivruu (https://github.com/aivruu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package me.qeklydev.scoreboard.manager;
 
 import java.util.List;
@@ -24,20 +41,20 @@ import org.jetbrains.annotations.Nullable;
  * This class is used for handle start-up and shutdown
  * of the scoreboard components, handling of currently
  * running {@link CustomExecutorThreadModel} implementations,
- * and creation or deletion (no toggle) of active scoreboards.
+ * and creation, toggling or deletion of active scoreboards.
  *
  * @since 0.0.1
  */
 public final class ScoreboardManager {
-  private static final byte FIRST_POSSIBLE_TOGGLE_RESULT = 0;
-  private static final byte TOGGLE_ENABLE_RESULT = 1;
-  private static final byte TOGGLE_DISABLE_RESULT = 2;
+  public static final byte FIRST_POSSIBLE_TOGGLE_RESULT = 0;
+  public static final byte TOGGLE_ENABLE_RESULT = 1;
+  public static final byte TOGGLE_DISABLE_RESULT = 2;
   private final ComponentLogger logger;
   private final ScoreboardModelRepository repository;
   private final ConfigurationProvider<Configuration> configProvider;
   private ScoreboardLibrary scoreboardLibrary;
   private List<CustomExecutorThreadModel> customExecutorModels;
-  
+
   public ScoreboardManager(final @NotNull ComponentLogger logger, final @NotNull ScoreboardModelRepository repository,
                            final @NotNull ConfigurationProvider<@NotNull Configuration> configProvider) {
     this.repository = repository;
@@ -80,7 +97,7 @@ public final class ScoreboardManager {
   /**
    * Uses the given executor thread model list to provide it
    * to the custom executor model list.
-   * 
+   *
    * @param providedExecutorModels the {@link CustomExecutorThreadModel} list.
    * @since 0.0.1
    */
@@ -103,13 +120,41 @@ public final class ScoreboardManager {
       }
       /*
        * If the period-rate for the executor is not defined
-       * yet, skip it.
+       * yet, define a default value -> 20.
        */
       if (executorThreadModel.periodRate() <= 0) {
         executorThreadModel.periodRate(20);
       }
       executorThreadModel.schedule();
     }
+  }
+  /**
+   * Adds the given executor model to the custom executors list
+   * and schedule it to start it.
+   *
+   * @param providedExecutorModel the {@link CustomExecutorThreadModel}.
+   * @since 0.0.1
+   */
+  public void scheduleWithProvidedExecutor(final @NotNull CustomExecutorThreadModel providedExecutorModel) {
+    this.customExecutorModels.add(providedExecutorModel);
+    if (providedExecutorModel.running()) {
+      return;
+    }
+    /*
+     * If unexpected, due to some reason a provided
+     * executor model is running, skip the iteration.
+     */
+    if (providedExecutorModel.running()) {
+      return;
+    }
+    /*
+     * If the period-rate for the executor is not defined
+     * yet, define a default value -> 20.
+     */
+    if (providedExecutorModel.periodRate() <= 0) {
+      providedExecutorModel.periodRate(20);
+    }
+    providedExecutorModel.schedule();
   }
 
   /**
@@ -192,7 +237,7 @@ public final class ScoreboardManager {
     if (config.scoreboardMode.equals("SINGLE")) {
       scoreboardModelSidebar.title(ComponentUtils.ofSingle(config.titleContent.get(0)));
     }
-    this.repository.register(player.getUniqueId().toString(), scoreboardModelSidebar);
+    this.repository.register(player, scoreboardModelSidebar);
   }
 
   /**
@@ -206,8 +251,11 @@ public final class ScoreboardManager {
    */
   private @Nullable CachedScoreboardModel createNeededModelForPlayer(final @NotNull Player player) {
     final var config = this.configProvider.get();
-    final var playerUid = player.getUniqueId().toString();
     final var newSidebarObject = this.scoreboardLibrary.createSidebar();
+    /*
+     * Provides the new cached scoreboard model based on
+     * the case ended, or null if the mode isn't valid.
+     */
     return switch (config.scoreboardMode) {
       case "WORLD" -> {
         CachedScoreboardModel scoreboardModel = null;
@@ -222,14 +270,14 @@ public final class ScoreboardManager {
             continue;
           }
           scoreboardModel = new CachedScoreboardModel(
-              playerUid, newSidebarObject,
+              player, newSidebarObject,
               ScoreboardToggleStateType.VISIBLE);
           break;
         }
         yield scoreboardModel;
       }
       case "SINGLE" -> new CachedScoreboardModel(
-          playerUid, newSidebarObject,
+          player, newSidebarObject,
           ScoreboardToggleStateType.VISIBLE);
       default -> null;
     };
@@ -249,7 +297,8 @@ public final class ScoreboardManager {
    * @see ScoreboardManager#TOGGLE_DISABLE_RESULT
    */
   public byte toggle(final @NotNull Player player) {
-    final var scoreboardModel = this.repository.findOrNull(player.getUniqueId().toString());
+    final var playerId = player.getUniqueId().toString();
+    final var scoreboardModel = this.repository.findOrNull(playerId);
     /*
      * Check if the player have a scoreboard assigned
      * before toggle-state change.
@@ -273,7 +322,7 @@ public final class ScoreboardManager {
      * on new toggle-state type.
      */
     final var newToggleStateProvided = scoreboardModel.toggleVisibility();
-    this.repository.update(scoreboardModel.id(), newToggleStateProvided);
+    this.repository.update(player, newToggleStateProvided);
     return (newToggleStateProvided == ScoreboardToggleStateType.CLOSED)
         ? TOGGLE_DISABLE_RESULT : TOGGLE_ENABLE_RESULT;
   }
