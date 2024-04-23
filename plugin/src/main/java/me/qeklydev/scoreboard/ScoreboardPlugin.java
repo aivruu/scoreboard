@@ -1,6 +1,22 @@
+/*
+ * This file is part of scoreboard - https://github.com/aivruu/scoreboard
+ * Copyright (C) 2020-2024 aivruu (https://github.com/aivruu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package me.qeklydev.scoreboard;
 
-import java.util.List;
 import me.qeklydev.scoreboard.config.Configuration;
 import me.qeklydev.scoreboard.config.ConfigurationProvider;
 import me.qeklydev.scoreboard.config.Messages;
@@ -15,8 +31,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
-  public static final byte RELOAD_ERROR_STATUS = 0;
-  public static final byte RELOAD_SUCCESS_STATUS = 1;
   private ComponentLogger logger;
   private ConfigurationProvider<Configuration> configProvider;
   private ConfigurationProvider<Messages> messagesProvider;
@@ -86,9 +100,15 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
      * and title updater executors.
      */
     this.scoreboardUpdaterThreadModel.periodRate(config.scoreboardFrameUpdateRate);
-    this.titleUpdaterThreadModel.periodRate(config.scoreboardTitleUpdateRate);
-    this.scoreboardManager.scheduleWithProvidedExecutors(List.of(
-        this.scoreboardUpdaterThreadModel, this.titleUpdaterThreadModel));
+    this.scoreboardManager.scheduleWithProvidedExecutor(this.scoreboardUpdaterThreadModel);
+    /*
+     * If animated-title option is enabled, set period-rate
+     * for the title-updater and start it.
+     */
+    if (config.useScoreboardAnimatedTitle) {
+      this.titleUpdaterThreadModel.periodRate(config.scoreboardTitleUpdateRate);
+      this.scoreboardManager.scheduleWithProvidedExecutor(this.titleUpdaterThreadModel);
+    }
   }
 
   /**
@@ -96,15 +116,12 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
    * period-rate for executor thread models, and title-animation
    * content.
    *
-   * @return A status code for this operation, {@code 0} if
-   *     scoreboard-mode isn't valid, or update-rate values
-   *     are zero or negative, {@code 1} if the executors
-   *     period-rate and title-animation content were updated.
+   * @return The boolean state for this operation, {@code true} if
+   *     the executors period-rate and title-animation content were updated.
+   *     Otherwise {@code false}.
    * @since 0.0.1
-   * @see ScoreboardPlugin#RELOAD_ERROR_STATUS
-   * @see ScoreboardPlugin#RELOAD_SUCCESS_STATUS
    */
-  public byte reload() {
+  public boolean reload() {
     final var config = this.configProvider.get();
     /*
      * Check if new provided values for update-rate for
@@ -112,7 +129,7 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
      * negative.
      */
     if (config.scoreboardTitleUpdateRate <= 0 || config.scoreboardFrameUpdateRate <= 0) {
-      return RELOAD_ERROR_STATUS;
+      return false;
     }
     /*
      * Check the scoreboard-mode, for cases where the case
@@ -124,10 +141,10 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
         this.scoreboardUpdaterThreadModel.periodRate(config.scoreboardFrameUpdateRate);
         this.titleUpdaterThreadModel.periodRate(config.scoreboardTitleUpdateRate);
         this.titleUpdaterThreadModel.content(ComponentUtils.ofMany(config.titleContent));
-        yield RELOAD_SUCCESS_STATUS;
+        yield true;
       }
       /* Scoreboard-mode defined isn't valid. */
-      default -> RELOAD_ERROR_STATUS;
+      default -> false;
     };
   }
 
