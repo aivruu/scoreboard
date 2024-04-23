@@ -1,3 +1,20 @@
+/*
+ * This file is part of scoreboard - https://github.com/aivruu/scoreboard
+ * Copyright (C) 2020-2024 aivruu (https://github.com/aivruu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package me.qeklydev.scoreboard.thread.impl;
 
 import java.util.List;
@@ -101,16 +118,14 @@ public final class ScoreboardUpdaterThreadModelImpl extends CustomExecutorThread
     for (final var scoreboardModel : super.scoreboardRepository.scoreboards()) {
       List<Component> content = null;
       for (final var section : config.scoreboardForWorlds) {
+        final var player = scoreboardModel.player();
         final var worldName = section.targetedWorld;
         /*
          * Checks if the world specified exists and is loaded
          * on the server, or if the player world name is equals
          * than the currently iterated.
          */
-        if ((Bukkit.getWorld(worldName) == null) || !scoreboardModel.ofUid()
-            .getWorld()
-            .getName()
-            .equals(worldName)) {
+        if ((Bukkit.getWorld(worldName) == null) || !player.getWorld().getName().equals(worldName)) {
           continue;
         }
         content = ComponentUtils.ofMany(section.content);

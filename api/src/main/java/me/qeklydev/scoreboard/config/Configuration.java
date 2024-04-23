@@ -1,3 +1,20 @@
+/*
+ * This file is part of scoreboard - https://github.com/aivruu/scoreboard
+ * Copyright (C) 2020-2024 aivruu (https://github.com/aivruu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package me.qeklydev.scoreboard.config;
 
 import java.util.List;
@@ -19,7 +36,7 @@ public final class Configuration implements ConfigurationInterface {
 
   @Comment("""
       Requires the use-scoreboard-animated-title option enabled.
-      
+
       The update-rate value for the scoreboard title
       content update.""")
   public byte scoreboardTitleUpdateRate = 10;
@@ -32,7 +49,7 @@ public final class Configuration implements ConfigurationInterface {
   @Comment("""
       The scoreboard type that will be used.
       There are only 2 available modes.
-      
+
       - SINGLE (DEFAULT) -> A same single scoreboard for all players.
       - WORLD -> There's a different scoreboard for each configured world.""")
   public String scoreboardMode = "SINGLE";
@@ -40,7 +57,7 @@ public final class Configuration implements ConfigurationInterface {
   @Comment("""
         This option is global, will be applied for
         any scoreboard mode.
-        
+
         The content that will be showed as title if the
         'animated-title' option is enabled, otherwise will
         take only the first element to show.""")
@@ -50,7 +67,7 @@ public final class Configuration implements ConfigurationInterface {
 
   @Comment("""
         THIS IS FOR 'SINGLE' SCOREBOARD MODE.
-        
+
         This content will be used for the scoreboard lines.""")
   public List<String> content = List.of(
       "",
