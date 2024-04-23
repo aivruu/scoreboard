@@ -1,4 +1,4 @@
-name: Scoreboard
+name: ProBoard
 main: me.qeklydev.scoreboard.ScoreboardPlugin
 loader: me.qeklydev.scoreboard.ScoreboardLoader
 authors: [ Qekly ]
