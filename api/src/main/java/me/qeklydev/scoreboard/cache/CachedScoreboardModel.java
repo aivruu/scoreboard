@@ -1,45 +1,40 @@
+/*
+ * This file is part of scoreboard - https://github.com/aivruu/scoreboard
+ * Copyright (C) 2020-2024 aivruu (https://github.com/aivruu)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 package me.qeklydev.scoreboard.cache;
 
-import java.util.UUID;
 import me.qeklydev.scoreboard.type.ScoreboardToggleStateType;
 import net.kyori.adventure.text.Component;
 import net.megavex.scoreboardlibrary.api.sidebar.Sidebar;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * This record class represents a cached model for the
  * scoreboard of each connected player.
- * 
- * @param id the player uuid as a string.
+ *
+ * @param player the player for this scoreboard.
  * @param internal the {@link Sidebar} model that represents
  *                 the scoreboard, and is used for their handling.
  * @param toggleState the current {@link ScoreboardToggleStateType}
  *                    for this scoreboard.
  * @since 0.0.1
  */
-public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar internal, @NotNull ScoreboardToggleStateType toggleState) {
-  /**
-   * Returns the {@link Player} based on the uuid
-   * for this scoreboard model. Will throw an {@link IllegalArgumentException}
-   * if the player is not connected to server.
-   * 
-   * @return The {@link Player}.
-   * @since 0.0.1
-   */
-  public @NotNull Player ofUid() {
-    final var player = Bukkit.getPlayer(UUID.fromString(this.id));
-    /*
-     * Checks if the specified player for the UUID
-     * is connected.
-     */
-    if (player == null) {
-      throw new IllegalArgumentException("The player with uid '%s' was not founded.".formatted(this.id));
-    }
-    return player;
-  }
-
+public record CachedScoreboardModel(@NotNull Player player, @NotNull Sidebar internal, @NotNull ScoreboardToggleStateType toggleState) {
   /**
    * Removes this scoreboard for the player with
    * this assigned model.
@@ -47,7 +42,6 @@ public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar interna
    * @return A boolean state for this operation, {@code true}
    *     if the scoreboard was removed. Otherwise {@code false}
    *     if was already removed early.
-   * @see CachedScoreboardModel#ofUid()
    * @since 0.0.1
    */
   public boolean remove() {
@@ -58,7 +52,7 @@ public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar interna
     if (this.internal.closed()) {
       return false;
     }
-    this.internal.removePlayer(this.ofUid());
+    this.internal.removePlayer(this.player);
     this.internal.close();
     return true;
   }
@@ -119,17 +113,16 @@ public record CachedScoreboardModel(@NotNull String id, @NotNull Sidebar interna
    * @since 0.0.1
    */
   public @NotNull ScoreboardToggleStateType toggleVisibility() {
-    final var player = this.ofUid();
     /*
      * If the previous toggle-state for the scoreboard
      * was 'CLOSED', then we show again the scoreboard
-     * to the player.
+     * to the player and return the toggle-state as 'VISIBLE'.
      */
     if (this.toggleState == ScoreboardToggleStateType.CLOSED) {
-      this.internal.addPlayer(player);
+      this.internal.addPlayer(this.player);
       return ScoreboardToggleStateType.VISIBLE;
     }
-    this.internal.removePlayer(player);
+    this.internal.removePlayer(this.player);
     return ScoreboardToggleStateType.CLOSED;
   }
 }
