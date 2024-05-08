@@ -31,6 +31,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
+  public static final String VERSION = "{version}"; // Replaced with blossom during project compilation.
   private ComponentLogger logger;
   private ConfigurationProvider<Configuration> configProvider;
   private ConfigurationProvider<Messages> messagesProvider;
