@@ -61,10 +61,8 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
     this.logger = super.getComponentLogger();
     this.configProvider = ConfigurationProvider.of(directory, "config", Configuration.class);
     this.messagesProvider = ConfigurationProvider.of(directory, "messages", Messages.class);
-    /*
-     * Check if configurations was loaded correctly before
-     * continue with loading process.
-     */
+    // Check if configurations was loaded correctly before
+    // continue with loading process.
     if (this.configProvider == null || this.messagesProvider == null) {
       this.logger.error("Configurations have not been loaded correctly, check them for any syntax error.");
     }
@@ -78,33 +76,25 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
 
   @Override
   public void onEnable() {
-    /*
-     * If configurations have not been loaded correctly
-     * during on-load process, skip on-enable method execution.
-     */
+    // If configurations have not been loaded correctly
+    // during on-load process, skip on-enable method execution.
     if (this.configProvider == null || this.messagesProvider == null) {
       return;
     }
     ApiProvider.load(this);
-    /*
-     * If scoreboard-manager has suffered some error
-     * during loading, stop method execution.
-     */
+    // If the scoreboard-manager could not be loaded correctly,
+    // we stop all loading process for the entire plugin.
     if (!this.scoreboardManager.load(this)) {
       return;
     }
     super.getServer().getPluginManager().registerEvents(new ScoreboardListener(this.scoreboardManager, this.logger), this);
     final var config = this.configProvider.get();
-    /*
-     * Define update-rate values for the scoreboard content
-     * and title updater executors.
-     */
+    // Define update-rate values for the scoreboard content and title
+    // updater executors.
     this.scoreboardUpdaterThreadModel.periodRate(config.scoreboardFrameUpdateRate);
     this.scoreboardManager.scheduleWithProvidedExecutor(this.scoreboardUpdaterThreadModel);
-    /*
-     * If animated-title option is enabled, set period-rate
-     * for the title-updater and start it.
-     */
+    // If animated-title option is enabled, set period-rate for the
+    // title-updater and start it.
     if (config.useScoreboardAnimatedTitle) {
       this.titleUpdaterThreadModel.periodRate(config.scoreboardTitleUpdateRate);
       this.scoreboardManager.scheduleWithProvidedExecutor(this.titleUpdaterThreadModel);
@@ -123,19 +113,15 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
    */
   public boolean reload() {
     final var config = this.configProvider.get();
-    /*
-     * Check if new provided values for update-rate for
-     * scoreboard lines, and title-animation is zero, or
-     * negative.
-     */
+    // Check if new provided values for update-rate for
+    // scoreboard lines, and title-animation is zero, or
+    // negative.
     if (config.scoreboardTitleUpdateRate <= 0 || config.scoreboardFrameUpdateRate <= 0) {
       return false;
     }
-    /*
-     * Check the scoreboard-mode, for cases where the case
-     * are 'SINGLE' OR 'WORLD', we update the update-rate
-     * values for the threads and, update the title content.
-     */
+    // Check the scoreboard-mode, for cases where the case
+    // are 'SINGLE' OR 'WORLD', we update the update-rate
+    // values for the threads and, update the title content.
     return switch (config.scoreboardMode) {
       case "SINGLE", "WORLD" -> {
         this.scoreboardUpdaterThreadModel.periodRate(config.scoreboardFrameUpdateRate);
@@ -143,7 +129,7 @@ public final class ScoreboardPlugin extends JavaPlugin implements ApiModel {
         this.titleUpdaterThreadModel.content(ComponentUtils.ofMany(config.titleContent));
         yield true;
       }
-      /* Scoreboard-mode defined isn't valid. */
+      // Scoreboard-mode defined isn't valid.
       default -> false;
     };
   }

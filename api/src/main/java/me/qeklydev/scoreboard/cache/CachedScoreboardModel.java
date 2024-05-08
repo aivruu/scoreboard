@@ -45,13 +45,13 @@ public record CachedScoreboardModel(@NotNull Player player, @NotNull Sidebar int
    * @since 0.0.1
    */
   public boolean remove() {
-    /*
-     * Check if the scoreboard already was closed
-     * for the player.
-     */
+    // Check if the scoreboard already was closed
+    // for the player.
     if (this.internal.closed()) {
       return false;
     }
+    // As the scoreboard isn't closed for the player yet, we remove
+    // to player from this sidebar, and we close the scoreboard.
     this.internal.removePlayer(this.player);
     this.internal.close();
     return true;
@@ -68,13 +68,13 @@ public record CachedScoreboardModel(@NotNull Player player, @NotNull Sidebar int
    * @since 0.0.1
    */
   public boolean changeTitle(final @NotNull Component newTitle) {
-    /*
-     * We don't want to update the title for this scoreboard
-     * if is closed for visibility.
-     */
+    // If the player scoreboard is on 'hide' state, we check for this.
+    // If it is true, we return a false boolean state. Otherwise
+    // we set the new title component for this scoreboard.
     if (this.toggleState == ScoreboardToggleStateType.CLOSED) {
       return false;
     }
+    // Define new title component.
     this.internal.title(newTitle);
     return true;
   }
@@ -113,15 +113,15 @@ public record CachedScoreboardModel(@NotNull Player player, @NotNull Sidebar int
    * @since 0.0.1
    */
   public @NotNull ScoreboardToggleStateType toggleVisibility() {
-    /*
-     * If the previous toggle-state for the scoreboard
-     * was 'CLOSED', then we show again the scoreboard
-     * to the player and return the toggle-state as 'VISIBLE'.
-     */
+    // If the previous toggle-state for the scoreboard
+    // was 'CLOSED', then we show again the scoreboard
+    // to the player and return the toggle-state as 'VISIBLE'.
     if (this.toggleState == ScoreboardToggleStateType.CLOSED) {
       this.internal.addPlayer(this.player);
       return ScoreboardToggleStateType.VISIBLE;
     }
+    // The scoreboard was hide, so we need to remove the
+    // player for him can't see the scoreboard.
     this.internal.removePlayer(this.player);
     return ScoreboardToggleStateType.CLOSED;
   }

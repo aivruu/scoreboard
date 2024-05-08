@@ -57,12 +57,12 @@ public final class ScoreboardUpdaterThreadModelImpl extends CustomExecutorThread
       case "SINGLE" -> this.processOnSingleMode(config);
       case "WORLD" -> this.processOnWorldMode(config);
       default -> {
-        /*
-         * If is the case that the specified scoreboard-mode isn't
-         * valid, the scoreboard-updater-thread will be shutdown.
-         */
+        // If switch-block has fallen on here, it means that the specified
+        // mode is unknown, so we need to shutting down this executor if any scoreboard
+        // will be processed due to the invalid mode given.
         this.logger.error("Unknown detected mode for the scoreboard, shutting down 'ScoreboardUpdaterExecutor' thread.");
         final var shutdownResult = super.shutdown();
+        // Shutdown process result for this executor has suffered a mishap?
         if (shutdownResult.failed()) {
           this.logger.warn("Incorrectly shutdown on current CustomExecutorThreadModel.");
         }
@@ -81,26 +81,20 @@ public final class ScoreboardUpdaterThreadModelImpl extends CustomExecutorThread
     final var componentsLines = ComponentUtils.ofMany(config.content);
     final var size = componentsLines.size();
     for (final var scoreboardModel : super.scoreboardRepository.scoreboards()) {
-      /*
-       * If visibility status for the scoreboard is 'CLOSED',
-       * skip this iteration.
-       */
+      // If visibility status for the scoreboard is 'CLOSED',
+      // skip this iteration.
       if (scoreboardModel.toggleState() == ScoreboardToggleStateType.CLOSED) {
         continue;
       }
       byte lineIndex = 0;
-      /*
-       * We reset the line index value to zero if current index
-       * has reached the list size.
-       */
+      // We reset the line index value to zero if current index
+      // has reached the list size.
       if (lineIndex == size) {
         lineIndex = 0;
       }
-      for (final var line : componentsLines) {
-        /*
-         * Establish the current content list index as the current line for
-         * the scoreboard content.
-         */
+      for (final var line : componentsLines) { // -> O(n ^ 2)
+        // Establish the current content list index as the current line for
+        // the scoreboard content.
         scoreboardModel.updateLine(lineIndex, line);
         lineIndex++;
       }
@@ -120,44 +114,34 @@ public final class ScoreboardUpdaterThreadModelImpl extends CustomExecutorThread
       for (final var section : config.scoreboardForWorlds) {
         final var player = scoreboardModel.player();
         final var worldName = section.targetedWorld;
-        /*
-         * Checks if the world specified exists and is loaded
-         * on the server, or if the player world name is equals
-         * than the currently iterated.
-         */
+        // Checks if the world specified exists and is loaded
+        // on the server, or if the player world name is equals
+        // than the currently iterated.
         if ((Bukkit.getWorld(worldName) == null) || !player.getWorld().getName().equals(worldName)) {
           continue;
         }
         content = ComponentUtils.ofMany(section.content);
         break;
       }
-      /*
-       * If content for the scoreboard was not provided due
-       * to any reason, process the next iteration.
-       */
+      // If content for the scoreboard was not provided due
+      // to any reason, process with the next iteration.
       if (content == null) {
         continue;
       }
-      /*
-       * If visibility status for the scoreboard is 'CLOSED',
-       * skip this iteration.
-       */
+      // If visibility status for the scoreboard is 'CLOSED',
+      // skip this iteration.
       if (scoreboardModel.toggleState() == ScoreboardToggleStateType.CLOSED) {
         continue;
       }
       byte lineIndex = 0;
-      /*
-       * We reset the line index value to zero if current index
-       * has reached the list size.
-       */
+      // We reset the line index value to zero if current index
+      // has reached the list size.
       if (lineIndex == content.size()) {
         lineIndex = 0;
       }
       for (final var line : content) {
-        /*
-         * Establish the current content list index as the current line for
-         * the scoreboard content.
-         */
+        // Establish the current content list index as the current line for
+        // the scoreboard content.
         scoreboardModel.updateLine(lineIndex, line);
         lineIndex++;
       }

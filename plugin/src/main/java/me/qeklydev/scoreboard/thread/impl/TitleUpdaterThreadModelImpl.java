@@ -59,25 +59,19 @@ public final class TitleUpdaterThreadModelImpl extends CustomExecutorThreadModel
 
   @Override
   public void run() {
-    /*
-     * If current index value is equals than the list size,
-     * reset the value to zero.
-     */
-    if (++this.index == this.content.size()) {
+    // If current index value is equals than the list size,
+    // reset the value to zero.
+    if (this.index++ == this.content.size()) {
       this.index = 0;
     }
     for (final var scoreboardModel : super.scoreboardRepository.scoreboards()) {
-      /*
-       * If visibility status for the scoreboard is 'CLOSED',
-       * skip this iteration.
-       */
+      // If visibility status for the scoreboard is 'CLOSED',
+      // skip this iteration.
       if (scoreboardModel.toggleState() == ScoreboardToggleStateType.CLOSED) {
         continue;
       }
-      /*
-       * Establish the current content list index as the current animation
-       * line for the title.
-       */
+      // Establish the current content list index as the current animation
+      // line for the title.
       scoreboardModel.updateTitle(this.content.get(this.index));
     }
   }

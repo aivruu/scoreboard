@@ -107,15 +107,12 @@ public final class ScoreboardModelRepository {
    */
   public boolean unregister(final @NotNull CachedScoreboardModel scoreboardModel) {
     final var playerId = scoreboardModel.player().getUniqueId().toString();
-    /*
-     * We skip the non-null check for this model
-     * due that already was effected before.
-     */
+    // The non-null check for the given scoreboard-model already
+    // was effected before, this method only will be invoked if the
+    // scoreboard-model for this player exists..
     this.scoreboards.remove(playerId);
-    /*
-     * Check if this player have a scoreboard
-     * assigned, and then remove it.
-     */
+    // Returns the boolean state for the remove(...) method
+    // execution from the scoreboard-model.
     return scoreboardModel.remove();
   }
 

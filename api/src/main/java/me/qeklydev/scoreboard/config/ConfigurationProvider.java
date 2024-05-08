@@ -90,6 +90,11 @@ public record ConfigurationProvider<C>(@NotNull AtomicReference<@NotNull C> conf
   public static <C extends ConfigurationInterface> @Nullable ConfigurationProvider<C> of(final @NotNull Path directory,
                                                                                          final @NotNull String fileName,
                                                                                          final @NotNull Class<@NotNull C> clazz) {
+    // We create a new hocon configuration loader and define visual options
+    // for the future files to be created, on this builder we set the states
+    // for the 'emitJsonCompatible', 'prettyPrinting', and we define default
+    // options for the loader, such as the file header text, and always copy
+    // the default values of the configuration models.
     final var loader = HoconConfigurationLoader.builder()
         .emitJsonCompatible(true)
         .prettyPrinting(true)
@@ -99,14 +104,21 @@ public record ConfigurationProvider<C>(@NotNull AtomicReference<@NotNull C> conf
                 - A Paper plugin to create customizable scoreboards on several modes.
                 - This plugin use MiniMessage format for the messages.""")
             .shouldCopyDefaults(true))
+        // We specify the file path for the configuration file.
         .path(directory.resolve(fileName + ".conf"))
         .build();
     try {
+      // We load the node for this hocon configuration loader, and we get
+      // the configuration-model based on the class given, and then we set
+      // the model specified by the class into the node, and save the node
+      // into the loader.
       final var node = loader.load();
       final var config = node.get(clazz);
       node.set(clazz, config);
       loader.save(node);
       assert config != null;
+      // After all that, we create a new configuration provider object with the
+      // information for this file.
       return new ConfigurationProvider<>(new AtomicReference<>(config), loader, clazz);
     } catch (final ConfigurateException exception) {
       exception.printStackTrace();

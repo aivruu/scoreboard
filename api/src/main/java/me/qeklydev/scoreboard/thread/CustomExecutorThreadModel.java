@@ -113,29 +113,24 @@ public abstract class CustomExecutorThreadModel implements Runnable {
    * @since 0.0.1
    */
   public @NotNull ExecutorThreadShutdownResult shutdown() {
-    /*
-     * This executor was already given as shutdown
-     * before.
-     */
+    // We return the status since the withAlreadyShutdown(...) method
+    // invocation in case that this executor already was shot as shutdown
+    // before.
     if (!this.running) {
       return ExecutorThreadShutdownResult.withAlreadyShutdown();
     }
-    /*
-     * Mark as no-longer running, and proceed with the
-     * normal or immediate shutdown.
-     */
+    // We mark this executor as no running anymore, and we start the shutdown
+    // process for the executor.
     this.running = false;
     try {
       this.executorService.shutdown();
       final var terminatedAfterTimeoutElapsed = !this.executorService.awaitTermination(5, TimeUnit.SECONDS);
-      /*
-       * Checks if the executor has terminated after the timeout
-       * specified (5 seconds).
-       */
+      // Checks if the executor has terminated after the timeout specified (5 seconds).
       if (terminatedAfterTimeoutElapsed) {
         this.executorService.shutdownNow();
         return ExecutorThreadShutdownResult.withShutdownImmediate();
       }
+      // Executor has ended correctly before time-out have elapsed.
       return ExecutorThreadShutdownResult.withShutdownWithTermination();
     } catch (final InterruptedException exception) {
       exception.printStackTrace();

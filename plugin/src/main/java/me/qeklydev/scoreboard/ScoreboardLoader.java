@@ -30,16 +30,12 @@ public final class ScoreboardLoader implements PluginLoader {
   @Override
   public void classloader(final @NotNull PluginClasspathBuilder pluginClasspathBuilder) {
     final var libraryResolver = new MavenLibraryResolver();
-    /*
-     * Declare repositories for the declared
-     * dependencies search.
-     */
+    // Declare repositories for the declared
+    // dependencies search.
     libraryResolver.addRepository(new RemoteRepository.Builder("central", "default", "https://repo1.maven.org/maven2/").build());
     libraryResolver.addRepository(new RemoteRepository.Builder("triumphteam", "default", "https://repo.triumphteam.dev/snapshots/").build());
-    /*
-     * Declare required dependencies with artifacts
-     * and coords.
-     */
+    // Declare required dependencies with artifacts
+    // and coords.
     libraryResolver.addDependency(new Dependency(new DefaultArtifact("dev.triumphteam:triumph-cmd-bukkit:2.0.0-SNAPSHOT"), null));
     libraryResolver.addDependency(new Dependency(new DefaultArtifact("org.spongepowered:configurate-hocon:4.1.2"), null));
     libraryResolver.addDependency(new Dependency(new DefaultArtifact("net.megavex:scoreboard-library-api:2.1.6"), null));

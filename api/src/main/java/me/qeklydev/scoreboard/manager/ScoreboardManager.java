@@ -53,6 +53,7 @@ public final class ScoreboardManager {
   private final ScoreboardModelRepository repository;
   private final ConfigurationProvider<Configuration> configProvider;
   private ScoreboardLibrary scoreboardLibrary;
+  @SuppressWarnings("unused")
   private List<CustomExecutorThreadModel> customExecutorModels;
 
   public ScoreboardManager(final @NotNull ComponentLogger logger, final @NotNull ScoreboardModelRepository repository,
@@ -83,10 +84,12 @@ public final class ScoreboardManager {
     this.logger.info("Checking for valid scoreboard-mode.");
     final var scoreboardMode = this.configProvider.get().scoreboardMode;
     return switch (scoreboardMode) {
+      // Valid scoreboard modes ->
       case "SINGLE", "WORLD" -> {
         this.logger.info("Detected '{}' scoreboard mode as valid.", scoreboardMode);
         yield true;
       }
+      // Any different scoreboard mode.
       default -> {
         this.logger.error("-> '{}' is not valid as a scoreboard-mode in the configuration.", scoreboardMode);
         yield false;
@@ -102,32 +105,21 @@ public final class ScoreboardManager {
    * @since 0.0.1
    */
   public void scheduleWithProvidedExecutors(final @NotNull List<@NotNull CustomExecutorThreadModel> providedExecutorModels) {
-    /*
-     * Throw an exception if the executor-model list
-     * is already initialized.
-     */
-    if (this.customExecutorModels != null) {
-      throw new IllegalStateException("Custom Executor Thread Model list already have a provider.");
-    }
-    this.customExecutorModels = providedExecutorModels;
-    for (final var executorThreadModel : this.customExecutorModels) {
-      /*
-       * If unexpected, due to some reason a provided
-       * executor model is running, skip the iteration.
-       */
+    for (final var executorThreadModel : providedExecutorModels) {
+      // If unexpected, due to some reason a provided
+      // executor model is running, skip the iteration.
       if (executorThreadModel.running()) {
         continue;
       }
-      /*
-       * If the period-rate for the executor is not defined
-       * yet, define a default value -> 20.
-       */
+      // If the period-rate for the executor is not defined
+      // yet, define a default value -> 20.
       if (executorThreadModel.periodRate() <= 0) {
         executorThreadModel.periodRate(20);
       }
       executorThreadModel.schedule();
     }
   }
+
   /**
    * Adds the given executor model to the custom executors list
    * and schedule it to start it.
@@ -137,20 +129,17 @@ public final class ScoreboardManager {
    */
   public void scheduleWithProvidedExecutor(final @NotNull CustomExecutorThreadModel providedExecutorModel) {
     this.customExecutorModels.add(providedExecutorModel);
+    // If the given executor is already running, we do nothing.
     if (providedExecutorModel.running()) {
       return;
     }
-    /*
-     * If unexpected, due to some reason a provided
-     * executor model is running, skip the iteration.
-     */
+    // If unexpected, due to some reason a provided
+    // executor model is running, skip the iteration.
     if (providedExecutorModel.running()) {
       return;
     }
-    /*
-     * If the period-rate for the executor is not defined
-     * yet, define a default value -> 20.
-     */
+    // If the period-rate for the executor is not defined
+    // yet, define a default value -> 20.
     if (providedExecutorModel.periodRate() <= 0) {
       providedExecutorModel.periodRate(20);
     }
@@ -164,15 +153,15 @@ public final class ScoreboardManager {
    * @since 0.0.1
    */
   public void shutdown() {
+    // If the scoreboard-library used for internal scoreboards handling
+    // through the server, we log to the console that is already shutdown.
     if (this.scoreboardLibrary == null) {
       this.logger.info("Scoreboard library already off, skipping shutting down for it.");
     }
     this.logger.info("Shutting down scoreboard components.");
-    /*
-     * Checks if there are executor thread models
-     * available, and if is, perform a shutting down
-     * on them.
-     */
+    // Checks if there are executor thread models
+    // available, and if is, perform a shutting down
+    // on them.
     if (!this.customExecutorModels.isEmpty()) {
       this.shutdownExecutorModels();
     }
@@ -188,14 +177,13 @@ public final class ScoreboardManager {
    */
   private void shutdownExecutorModels() {
     for (final var executorThreadModel : this.customExecutorModels) {
-      /*
-       * If executor has no-longer run before,
-       * we skip it.
-       */
+      // If executor has no-longer run before,
+      // we skip it.
       if (!executorThreadModel.running()) {
         continue;
       }
       final var executorShutdownResult = executorThreadModel.shutdown();
+      // Notify if the executor shutdown has failed.
       if (executorShutdownResult.failed()) {
         this.logger.warn("Incorrectly shutdown on current CustomExecutorThreadModel.");
       }
@@ -211,30 +199,25 @@ public final class ScoreboardManager {
    */
   public void create(final @NotNull Player player) {
     final var scoreboardModel = this.createNeededModelForPlayer(player);
-    /*
-     * Checks if the provided scoreboard model is nullable,
-     * or not.
-     */
+    // Checks if the provided scoreboard model is nullable,
+    // or not.
     if (scoreboardModel == null) {
       return;
     }
     final var scoreboardCreateEvent = new ScoreboardCreateEvent(player, scoreboardModel);
     Bukkit.getPluginManager().callEvent(scoreboardCreateEvent);
-    /*
-     * Avoid totally scoreboard creation for the player
-     * if the event was cancelled.
-     */
+    // Avoid totally scoreboard creation for the player
+    // if the event was cancelled.
     if (scoreboardCreateEvent.isCancelled()) {
       return;
     }
     final var config = this.configProvider.get();
     final var scoreboardModelSidebar = scoreboardModel.internal();
     scoreboardModelSidebar.addPlayer(player);
-    /*
-     * Check if the scoreboard-mode defined is 'SINGLE',
-     * so we need to set the title manually.
-     */
-    if (config.scoreboardMode.equals("SINGLE")) {
+    // In case that animated-title isn't enabled, we need to define manually
+    // the title for the scoreboard, so we use the first element of the animated-title
+    // content list as static-title for the scoreboard.
+    if (config.useScoreboardAnimatedTitle) {
       scoreboardModelSidebar.title(ComponentUtils.ofSingle(config.titleContent.get(0)));
     }
     this.repository.register(player, scoreboardModelSidebar);
@@ -252,20 +235,16 @@ public final class ScoreboardManager {
   private @Nullable CachedScoreboardModel createNeededModelForPlayer(final @NotNull Player player) {
     final var config = this.configProvider.get();
     final var newSidebarObject = this.scoreboardLibrary.createSidebar();
-    /*
-     * Provides the new cached scoreboard model based on
-     * the case ended, or null if the mode isn't valid.
-     */
+    // Provides the new cached scoreboard model based on
+    // the case ended, or null if the mode isn't valid.
     return switch (config.scoreboardMode) {
       case "WORLD" -> {
         CachedScoreboardModel scoreboardModel = null;
         for (final var section : config.scoreboardForWorlds) {
           final var worldName = section.targetedWorld;
-          /*
-           * Checks if the world specified exists and is loaded
-           * on the server, or if the player world name is equals
-           * than the currently iterated.
-           */
+          // Checks if the world specified exists and is loaded
+          // on the server, or if the player world name is equals
+          // than the currently iterated.
           if ((Bukkit.getWorld(worldName) == null) || !player.getWorld().getName().equals(worldName)) {
             continue;
           }
@@ -299,30 +278,31 @@ public final class ScoreboardManager {
   public byte toggle(final @NotNull Player player) {
     final var playerId = player.getUniqueId().toString();
     final var scoreboardModel = this.repository.findOrNull(playerId);
-    /*
-     * Check if the player have a scoreboard assigned
-     * before toggle-state change.
-     */
+    // Check if the player have a scoreboard assigned
+    // before toggle-state change.
     if (scoreboardModel == null) {
       return FIRST_POSSIBLE_TOGGLE_RESULT;
     }
-    /*
-     * Fires the scoreboard toggle event and return
-     * the final status code for this operation.
-     */
+    // Fires the scoreboard toggle event and return
+    // the final status code for this operation.
     final var scoreboardToggleEvent = new ScoreboardToggleEvent(player, scoreboardModel, scoreboardModel.toggleState());
     Bukkit.getPluginManager().callEvent(scoreboardToggleEvent);
+    // In case that another plugin/s has cancelled this event due
+    // to any reason, we will return the [FIRST_POSSIBLE_TOGGLE_RESULT]
+    // status that aims to a byte data type with value -> 0.
     if (scoreboardToggleEvent.isCancelled()) {
       return FIRST_POSSIBLE_TOGGLE_RESULT;
     }
-    /*
-     * Toggle visibility and state for the scoreboard,
-     * and use the provided toggle-state for update model
-     * ín repository cache, and provide a status code depending
-     * on new toggle-state type.
-     */
+    // Toggle visibility and state for the scoreboard,
+    // and use the provided toggle-state for update model
+    // ín repository cache, and provide a status code depending
+    // on new toggle-state type.
     final var newToggleStateProvided = scoreboardModel.toggleVisibility();
     this.repository.update(player, newToggleStateProvided);
+    // If the new toggle-state defined is the [CLOSED] type, we return
+    // the [TOGGLE_DISABLE_RESULT] status with byte value of -> 2. Other-wise
+    // we return the [TOGGLE_ENABLE_RESULT] status that aims to a byte data
+    // value with value -> 1.
     return (newToggleStateProvided == ScoreboardToggleStateType.CLOSED)
         ? TOGGLE_DISABLE_RESULT : TOGGLE_ENABLE_RESULT;
   }
@@ -338,20 +318,17 @@ public final class ScoreboardManager {
    */
   public boolean delete(final @NotNull Player player) {
     final var scoreboardModel = this.repository.findOrNull(player.getUniqueId().toString());
-    /*
-     * Check if the player have a scoreboard assigned
-     * before deletion.
-     */
+    // Check if the player have a scoreboard assigned
+    // before deletion.
     if (scoreboardModel == null) {
       return false;
     }
-    /*
-     * Fires the scoreboard close event and return
-     * the final boolean state for this operation
-     * since repository execution.
-     */
+    // Fires the scoreboard close event during scoreboard deletion
+    // for interactions with another plugins.
     final var scoreboardCloseEvent = new ScoreboardCloseEvent(player, scoreboardModel);
     Bukkit.getPluginManager().callEvent(scoreboardCloseEvent);
+    // We will return the boolean state depending on execution result
+    // for the unregister(...) method from the scoreboards-repository.
     return this.repository.unregister(scoreboardModel);
   }
 }
