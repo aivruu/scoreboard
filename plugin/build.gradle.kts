@@ -19,7 +19,7 @@ tasks {
 }
 
 blossom {
-  val tokenRoute = "src/main/java/me/qeklydev/scoreboard/Constants.java"
+  val tokenRoute = "src/main/java/me/qeklydev/scoreboard/ScoreboardPlugin.java"
   replaceToken("{version}", project.version, tokenRoute)
 }
 
